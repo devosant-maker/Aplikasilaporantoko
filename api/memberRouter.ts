@@ -1,42 +1,47 @@
 import { z } from "zod";
-import { createRouter, publicQuery } from "./middleware";
+import { createRouter, publicQuery, authedQuery, adminQuery } from "./middleware";
 import {
   findAllMember,
-  findMemberAktif,
+  findMemberById,
   createMember,
   updateMember,
   deleteMember,
 } from "./queries/member";
 
 export const memberRouter = createRouter({
-  list: publicQuery
-    .input(z.object({ search: z.string().optional() }).optional())
-    .query(({ input }) => findAllMember(input?.search)),
+  list: authedQuery
+    .input(
+      z.object({
+        page: z.number().optional(),
+        limit: z.number().optional(),
+        search: z.string().optional(),
+      }).optional()
+    )
+    .query(({ input }) => findAllMember(input)),
 
-  aktif: publicQuery.query(() => findMemberAktif()),
+  byId: authedQuery
+    .input(z.object({ id: z.number() }))
+    .query(({ input }) => findMemberById(input.id)),
 
-  create: publicQuery
+  create: authedQuery
     .input(
       z.object({
         nama: z.string().min(1),
-        noHp: z.string().optional(),
-        diskonPersen: z.number().min(0).max(100).optional(),
+        noHp: z.string().min(10),
+        email: z.string().email().optional(),
         diskonRupiah: z.number().min(0).optional(),
-        keterangan: z.string().optional(),
       })
     )
     .mutation(({ input }) => createMember(input)),
 
-  update: publicQuery
+  update: authedQuery
     .input(
       z.object({
         id: z.number(),
         nama: z.string().min(1).optional(),
         noHp: z.string().optional(),
-        diskonPersen: z.number().min(0).max(100).optional(),
+        email: z.string().email().optional(),
         diskonRupiah: z.number().min(0).optional(),
-        keterangan: z.string().optional(),
-        aktif: z.boolean().optional(),
       })
     )
     .mutation(({ input }) => {
@@ -44,7 +49,7 @@ export const memberRouter = createRouter({
       return updateMember(id, data);
     }),
 
-  delete: publicQuery
+  delete: adminQuery
     .input(z.object({ id: z.number() }))
     .mutation(({ input }) => deleteMember(input.id)),
 });
