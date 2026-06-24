@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { createRouter, publicQuery } from "./middleware";
+import { createRouter, publicQuery, authedQuery, adminQuery } from "./middleware";
 import {
   findAllProduk,
-  findProdukAktif,
+  findProdukById,
   createProduk,
   updateProduk,
   deleteProduk,
@@ -10,29 +10,38 @@ import {
 
 export const produkRouter = createRouter({
   list: publicQuery
-    .input(z.object({ search: z.string().optional() }).optional())
-    .query(({ input }) => findAllProduk(input?.search)),
+    .input(
+      z.object({
+        page: z.number().optional(),
+        limit: z.number().optional(),
+        search: z.string().optional(),
+      }).optional()
+    )
+    .query(({ input }) => findAllProduk(input)),
 
-  aktif: publicQuery.query(() => findProdukAktif()),
+  byId: publicQuery
+    .input(z.object({ id: z.number() }))
+    .query(({ input }) => findProdukById(input.id)),
 
-  create: publicQuery
+  create: adminQuery
     .input(
       z.object({
         nama: z.string().min(1),
+        hargaDefault: z.number().positive(),
+        stok: z.number().min(0),
         kategori: z.string().optional(),
-        hargaDefault: z.number().optional(),
       })
     )
     .mutation(({ input }) => createProduk(input)),
 
-  update: publicQuery
+  update: adminQuery
     .input(
       z.object({
         id: z.number(),
         nama: z.string().min(1).optional(),
+        hargaDefault: z.number().positive().optional(),
+        stok: z.number().min(0).optional(),
         kategori: z.string().optional(),
-        hargaDefault: z.number().optional(),
-        aktif: z.boolean().optional(),
       })
     )
     .mutation(({ input }) => {
@@ -40,7 +49,7 @@ export const produkRouter = createRouter({
       return updateProduk(id, data);
     }),
 
-  delete: publicQuery
+  delete: adminQuery
     .input(z.object({ id: z.number() }))
     .mutation(({ input }) => deleteProduk(input.id)),
 });
