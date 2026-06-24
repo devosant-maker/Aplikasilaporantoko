@@ -1,6 +1,5 @@
 import { z } from "zod";
-// ✅ TAMBAHKAN authedQuery DAN adminQuery DI IMPORT INI
-import { createRouter, publicQuery, authedQuery, adminQuery } from "./middleware"; 
+import { createRouter, publicQuery, authedQuery, adminQuery } from "./middleware";
 import {
   findAllPegawai,
   findPegawaiById,
@@ -11,21 +10,16 @@ import {
 } from "./queries/pegawai";
 
 export const pegawaiRouter = createRouter({
-  // ✅ AMAN: Cuma pegawai yang udah login yang bisa lihat daftar pegawai
   list: authedQuery.query(() => findAllPegawai()),
 
   byId: authedQuery
     .input(z.object({ id: z.number() }))
     .query(({ input }) => findPegawaiById(input.id)),
 
-  // ⚠️ CATATAN PENTING: 
-  // Kalau byUsername ini dipanggil dari frontend pas HALAMAN LOGIN (saat user belum punya token), 
-  // biarkan tetap publicQuery. Tapi kalau ini cuma buat admin cari data, ganti ke authedQuery.
-  byUsername: publicQuery 
+  byUsername: publicQuery
     .input(z.object({ username: z.string() }))
     .query(({ input }) => findPegawaiByUsername(input.username)),
 
-  // ✅ AMAN: HANYA Admin yang bisa nambah pegawai baru
   create: adminQuery
     .input(
       z.object({
@@ -37,7 +31,6 @@ export const pegawaiRouter = createRouter({
     )
     .mutation(({ input }) => createPegawai(input)),
 
-  // ✅ AMAN: HANYA Admin yang bisa update data pegawai
   update: adminQuery
     .input(
       z.object({
@@ -52,7 +45,6 @@ export const pegawaiRouter = createRouter({
       return updatePegawai(id, data);
     }),
 
-  // ✅ AMAN: HANYA Admin yang bisa hapus (soft delete) pegawai
   delete: adminQuery
     .input(z.object({ id: z.number() }))
     .mutation(({ input }) => deletePegawai(input.id)),
